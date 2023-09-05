@@ -18,9 +18,6 @@ from matplotlib.image import imread
 import matplotlib.style as mplstyle
 from zhuanyi_test import *
 
-"""
-增加无人机数量、在空中形成五环形状、要避免无人机发生碰撞
-"""
 # 设置全局小数保留位数为2
 np.set_printoptions(precision=2)
 mplstyle.use('fast')
@@ -297,6 +294,39 @@ class CreateMap:
             self.buildings_location = buildings_location_100
 
         return self.buildings, self.buildings_location
+
+    class MoveController:
+        def Move_up(self):
+            return 0, 0, 0.2
+
+        def Move_down(self):
+            return 0, 0, -0.2
+
+        #def Move_to(self):
+    """
+    def go_to(pointa, pointb, max_speed=0.3):
+    x_diff = pointb[0] - pointa[0]
+    y_diff = pointb[1] - pointa[1]
+
+    # Calculate the distance to the target point
+    distance = np.sqrt(x_diff ** 2 + y_diff ** 2)
+
+    # Check if x_diff or y_diff is less than 0.1 and set vx and vy accordingly
+    if abs(x_diff) < 0.1:
+        vx = 0
+    else:
+        vx_normalized = x_diff / distance
+        vx = vx_normalized * max_speed
+
+    if abs(y_diff) < 0.1:
+        vy = 0
+    else:
+        vy_normalized = y_diff / distance
+        vy = vy_normalized * max_speed
+
+    return vx, vy
+
+    """
 
 
 def get_whz(size=10):
