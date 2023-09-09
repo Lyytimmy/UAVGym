@@ -289,7 +289,8 @@ def main():
             uav_state = env.state[index][:3]
             aim = pair[2]
             vx, vy, vz = mvcontroller.Move_to(uav_state, aim)
-            if
+            if mvcontroller._Is_arrive(uav, aim):
+
     """
     actions = [[0, 0, 0, 0] for _ in range(32)]
     done = False
