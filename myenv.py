@@ -1,5 +1,7 @@
 import csv
 import random
+import sys
+
 import gym
 from gym import spaces
 import numpy as np
@@ -18,6 +20,7 @@ from zhuanyi_test import *
 # 设置全局小数保留位数为2
 np.set_printoptions(precision=2)
 mplstyle.use('fast')
+
 
 class UAVEnv(gym.Env):
     def __init__(self, uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r):
@@ -40,12 +43,12 @@ class UAVEnv(gym.Env):
                                                           self.uav_num), dtype=np.float32)
 
         # Init state
-        #self.state = uav_init_state
+        # self.state = uav_init_state
         self.state = [[0, 0, 0, 0, 0, 0, 0] for _ in range(32)]
         for i in range(32):
             x, y = match_pairs_zhuanyi[i][1][:2]
             self.state[i][:2] = x, y
-        #self.state = uav_init_state_zhuanyi
+        # self.state = uav_init_state_zhuanyi
 
     def recorder(self, env_t):
         for i in range(self.uav_num):
@@ -62,18 +65,6 @@ class UAVEnv(gym.Env):
             self.state[i][2] += actions[i][2]  # uav_z = vz*t
             self.state[i][3:6] = actions[i][:3]  # update vx, vy, vz
             self.state[i][6] = actions[i][3]  # update sensor status
-        """
-         if _will_enter_building(self.state[i], actions[i], self.buildings_location, self.uav_r):
-                actions[i][:3] = 0  # set vx, vy, vz to zero
-
-            if _is_outside_map(self.state[i], actions[i], self.map_w, self.map_h, self.map_z):
-                actions[i][:3] = 0  # set vx, vy, vz to zero
-                    if _is_in_building(self.state[i], self.buildings_location, self.uav_r):
-                self.state[i][0] -= actions[i][0]  # uav_x = vx*t, suppose t=1
-                self.state[i][1] -= actions[i][1]  # uav_y = vy*t
-                self.state[i][2] -= actions[i][2]  # uav_z = vz*t
-        """
-
         return self.state, 0, False, {}
 
     def reset(self):
@@ -82,7 +73,7 @@ class UAVEnv(gym.Env):
 
 
 class Render:
-    def __init__(self, uav_num, state, buildings, map_w, map_h, map_z, uav_r, position_pool, map_size=10):
+    def __init__(self, uav_num, state, buildings, map_w, map_h, map_z, uav_r, position_pool):
         self.uav_num = uav_num
         self.state = state
         self.buildings = buildings
@@ -91,17 +82,11 @@ class Render:
         self.map_z = map_z
         self.uav_r = uav_r
         self.position_pool = position_pool
-        self.map_size = map_size
+        self.line = []*uav_num
 
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
         self.ax = self.fig.add_subplot(111, projection='3d')  # 创建三维坐标系
-
-        # 绘制网格
-        for x in range(map_w + 1):
-            self.ax.plot([x, x], [0, map_h], [0, 0], color='gray', alpha=0.5)
-        for y in range(map_h + 1):
-            self.ax.plot([0, map_w], [y, y], [0, 0], color='gray', alpha=0.5)
 
         # 绘制建筑
         # draw building
@@ -155,47 +140,58 @@ class Render:
 
     def render3D(self):
         plt.ion()
-        # draw uav
         for i in range(self.uav_num):
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
-            self.ax.plot(x_traj, y_traj, z_traj, color='gray', alpha=0.7, linewidth=2.0)
+            l = self.ax.plot(x_traj, y_traj, z_traj, color='gray', alpha=0.7, linewidth=2.0)
+            self.line.append(l)
+            if len(self.line) > 5 * self.uav_num:
+                old_line = self.line.pop(0)
+                old_line.remove()
 
 
-class CreateMap:
-    def __init__(self, map_size, map_w, map_h, map_z):
-        self.buildings = []  # 记录建筑四点位置和高度
-        self.buildings_location = []  # 记录建筑中心位置和高度
-        self.map_size = map_size
-        self.map_w = map_w
-        self.map_h = map_h
-        self.map_z = map_z
+class SetConfig:
+    def __init__(self, name):
+        self.name = name
+        self.uav_num = 0
+        self.uav_r = 0.3
+        self.map_w, self.map_h, self.map_z = 0, 0, 0
+        self.buildings_location = []
+        self.buildings = []
+        self.match_pairs = []
 
-    def get_Buildings(self):
-        if self.map_size == 10:
-            self.buildings = buildings_10
-            self.buildings_location = buildings_location_10
-
-        elif self.map_size == 50:
-            self.buildings = buildings_zhuanyi
+    def Setting(self):
+        if self.name == 'Map1':
+            self.uav_num = 50
+            self.map_w, self.map_h, self.map_z = 50, 50, 5
+            self.buildings_location = buildings_location_WH
+            self.buildings = buildings_WH
+            self.match_pairs = match_pairs
+        elif self.name == 'Map2':
+            self.uav_num = 50
+            self.map_w, self.map_h, self.map_z = 50, 50, 5
             self.buildings_location = buildings_location_zhuanyi
+            self.buildings = buildings_zhuanyi
+            self.match_pairs = match_pairs_zhuanyi
+        else:
+            print("参数错误")
+            sys.exit()
 
-        elif self.map_size == 100:
-            self.buildings = buildings_100
-            self.buildings_location = buildings_location_100
+        return self.uav_num, self.map_w, self.map_h, self.map_z, self.buildings_location, self.buildings, self.match_pairs, self.uav_r
 
-        return self.buildings, self.buildings_location
 
 class MvController:
     def __init__(self, map_w, map_h, map_z, buildings_location):
         self.map_w = map_w
         self.map_h = map_h
         self.map_z = map_z
-        self.buildings_location =buildings_location
+        self.buildings_location = buildings_location
 
     def Move_up(self):
         return 0, 0, 0.2
+
     def Move_down(self):
         return 0, 0, -0.2
+
     def Move_to(self, uav, aim):
         max_speed = 0.3
         volatility = 0.05
@@ -227,7 +223,7 @@ class MvController:
         z_error = abs(uav[2] - aim[2])
         return x_error < tolerance and y_error < tolerance and z_error < tolerance
 
-    #def Is_collision(self):检测无人机之间是否会发生碰撞
+    # def Is_collision(self):检测无人机之间是否会发生碰撞
 
     def Will_enter_buildings(self, uav, action, uav_r):
         next_x = uav[0] + action[0]
@@ -250,33 +246,16 @@ class MvController:
         return False
 
 
-
-
-def get_whz(size=10):
-    map_w, map_h, map_z = 0, 0, 0
-    if size == 10:
-        map_w, map_h, map_z = 10, 10, 10
-    elif size == 50:
-        map_w, map_h, map_z = 50, 50, 10
-    elif size == 100:
-        map_w, map_h, map_z = 100, 100, 10
-    return map_w, map_h, map_z
-
-
 def main():
-    uav_num = 32
-    uav_r = 0.3
-    map_size = 50
+    Map_name = ''
     env_t = 0
-    map_w, map_h, map_z = get_whz(map_size)
     # 初始化MAP模块
-    MAP = CreateMap(map_size, map_w, map_h, map_z)
-    # 调用get_random_Buildings方法生成建筑物列表
-    buildings, buildings_location = MAP.get_Buildings()
+    MAP = SetConfig(Map_name)
+    uav_num, map_w, map_h, map_z, buildings_location, buildings, match_pairs, uav_r = MAP.Setting()
     # 初始化Env模块
     env = UAVEnv(uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r)
     # 初始化render模块
-    render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool, map_size)
+    render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool)
     # 初始化MVController模块
     mvcontroller = MvController()
     # 开始
@@ -284,7 +263,7 @@ def main():
     flag = [False] * uav_num
     done = False
     while not done:
-        for pair in match_pairs_zhuanyi:
+        for pair in match_pairs:
             index = pair[0]
             uav_state = env.state[index][:3]
             aim = pair[2]
@@ -305,7 +284,6 @@ def main():
         env_t += 1
         if done:
             env.reset()
-
 
 
 if __name__ == "__main__":
