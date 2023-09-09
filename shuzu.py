@@ -1,5 +1,4 @@
 import random
-import array_data_50
 
 
 def generate_array():

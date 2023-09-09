@@ -1,7 +1,6 @@
 import csv
 import random
 import sys
-
 import gym
 from gym import spaces
 import numpy as np
@@ -23,14 +22,14 @@ mplstyle.use('fast')
 
 
 class UAVEnv(gym.Env):
-    def __init__(self, uav_num, match_pairs, map_w, map_h, map_z):
+    def __init__(self, uav_num,  map_w, map_h, map_z, Init_state):
         super(UAVEnv, self).__init__()
         self.uav_num = uav_num
-        self.match_pairs = match_pairs
         self.map_w = map_w
         self.map_h = map_h
         self.map_z = map_z
         self.position_pool = [[] for _ in range(self.uav_num)]
+        self.state = Init_state
 
         # Define action and observation space  动作空间是所有动作状态的最大最小值之间、观察空间是所有状态的最大最小值之间
         self.action_space = spaces.Box(low=np.array([-0.35, -0.35, -0.35, 0] * self.uav_num),
@@ -39,16 +38,12 @@ class UAVEnv(gym.Env):
                                             high=np.array([self.map_w, self.map_h, self.map_z, 1, 1, 1, 1] *
                                                           self.uav_num), dtype=np.float32)
 
-        self.state = [[0, 0, 0, 0, 0, 0, 0] for _ in range(uav_num)]
-        for i in range(uav_num):
-            x, y = self.match_pairs[i][1][:2]
-            self.state[i][:2] = x, y
-
     def recorder(self, env_t):
-        for i in range(self.uav_num):
-            x, y, z = self.state[i][:3]
-            position = [x, y, z, env_t]
-            self.position_pool[i].append(position)
+        if env_t % 2 == 0:
+            for i in range(self.uav_num):
+                x, y, z = self.state[i][:3]
+                position = [x, y, z, env_t]
+                self.position_pool[i].append(position)
 
     def step(self, actions, env_t):
         actions = np.array(actions).reshape(self.uav_num, 4)
@@ -76,7 +71,7 @@ class Render:
         self.map_z = map_z
         self.uav_r = uav_r
         self.position_pool = position_pool
-        self.line = []*uav_num
+        self.line = []
 
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
@@ -136,12 +131,11 @@ class Render:
         plt.ion()
         for i in range(self.uav_num):
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
-            l = self.ax.plot(x_traj, y_traj, z_traj, color='gray', alpha=0.7, linewidth=2.0)
+            l = self.ax.plot(x_traj[-10:], y_traj[-10:], z_traj[-10:], color='gray', alpha=0.7, linewidth=2.0)
             self.line.append(l)
-            if len(self.line) > 5 * self.uav_num:
-                old_line = self.line.pop(0)
-                old_line.remove()
-
+        while len(self.line) > self.uav_num:
+            old_line = self.line.pop(0)
+            old_line[0].remove()
 
 class SetConfig:
     def __init__(self, name):
@@ -152,6 +146,7 @@ class SetConfig:
         self.buildings_location = []
         self.buildings = []
         self.match_pairs = []
+        self.Init_state = []
 
     def Setting(self):
         if self.name == 'Map1':
@@ -160,17 +155,19 @@ class SetConfig:
             self.buildings_location = buildings_location_WH
             self.buildings = buildings_WH
             self.match_pairs = match_pairs
+            self.Init_state = uav_init_state
         elif self.name == 'Map2':
-            self.uav_num = 50
+            self.uav_num = 32
             self.map_w, self.map_h, self.map_z = 50, 50, 5
             self.buildings_location = buildings_location_zhuanyi
             self.buildings = buildings_zhuanyi
             self.match_pairs = match_pairs_zhuanyi
+            self.Init_state = uav_init_state_zhuanyi
         else:
             print("参数错误")
             sys.exit()
 
-        return self.uav_num, self.map_w, self.map_h, self.map_z, self.buildings_location, self.buildings, self.match_pairs, self.uav_r
+        return self.uav_num, self.map_w, self.map_h, self.map_z, self.buildings_location, self.buildings, self.match_pairs, self.uav_r, self.Init_state
 
 
 class MvController:
@@ -188,7 +185,7 @@ class MvController:
 
     def Move_to(self, uav, aim):
         max_speed = 0.3
-        volatility = 0.05
+        volatility = 0.02
         x_diff = uav[0] - aim[0]
         y_diff = uav[1] - aim[1]
         z_diff = uav[2] - aim[2]
@@ -241,17 +238,17 @@ class MvController:
 
 
 def main():
-    Map_name = ''
+    Map_name = 'Map2'
     env_t = 0
     # 初始化MAP模块
     MAP = SetConfig(Map_name)
-    uav_num, map_w, map_h, map_z, buildings_location, buildings, match_pairs, uav_r = MAP.Setting()
+    uav_num, map_w, map_h, map_z, buildings_location, buildings, match_pairs, uav_r, Init_state = MAP.Setting()
     # 初始化Env模块
-    env = UAVEnv(uav_num, match_pairs, map_w, map_h, map_z)
+    env = UAVEnv(uav_num,  map_w, map_h, map_z, Init_state)
     # 初始化render模块
     render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool)
     # 初始化MVController模块
-    mvcontroller = MvController()
+    mvcontroller = MvController(map_w, map_h, map_z, buildings_location)
     # 开始
     actions = [[0, 0, 0, 0] for _ in range(uav_num)]
     flag = [False] * uav_num
