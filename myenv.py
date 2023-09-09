@@ -23,32 +23,26 @@ mplstyle.use('fast')
 
 
 class UAVEnv(gym.Env):
-    def __init__(self, uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r):
+    def __init__(self, uav_num, match_pairs, map_w, map_h, map_z):
         super(UAVEnv, self).__init__()
-
         self.uav_num = uav_num
-        self.buildings = buildings
-        self.buildings_location = buildings_location
+        self.match_pairs = match_pairs
         self.map_w = map_w
         self.map_h = map_h
         self.map_z = map_z
-        self.uav_r = uav_r
         self.position_pool = [[] for _ in range(self.uav_num)]
 
         # Define action and observation space  动作空间是所有动作状态的最大最小值之间、观察空间是所有状态的最大最小值之间
-        self.action_space = spaces.Box(low=np.array([-0.3, -0.3, -0.3, 0] * self.uav_num),
-                                       high=np.array([0.3, 0.3, 0.3, 1] * self.uav_num), dtype=np.float32)
+        self.action_space = spaces.Box(low=np.array([-0.35, -0.35, -0.35, 0] * self.uav_num),
+                                       high=np.array([0.35, 0.35, 0.35, 1] * self.uav_num), dtype=np.float32)
         self.observation_space = spaces.Box(low=np.array([0, 0, 0, -1, -1, -1, 0] * self.uav_num),
                                             high=np.array([self.map_w, self.map_h, self.map_z, 1, 1, 1, 1] *
                                                           self.uav_num), dtype=np.float32)
 
-        # Init state
-        # self.state = uav_init_state
-        self.state = [[0, 0, 0, 0, 0, 0, 0] for _ in range(32)]
-        for i in range(32):
-            x, y = match_pairs_zhuanyi[i][1][:2]
+        self.state = [[0, 0, 0, 0, 0, 0, 0] for _ in range(uav_num)]
+        for i in range(uav_num):
+            x, y = self.match_pairs[i][1][:2]
             self.state[i][:2] = x, y
-        # self.state = uav_init_state_zhuanyi
 
     def recorder(self, env_t):
         for i in range(self.uav_num):
@@ -253,7 +247,7 @@ def main():
     MAP = SetConfig(Map_name)
     uav_num, map_w, map_h, map_z, buildings_location, buildings, match_pairs, uav_r = MAP.Setting()
     # 初始化Env模块
-    env = UAVEnv(uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r)
+    env = UAVEnv(uav_num, match_pairs, map_w, map_h, map_z)
     # 初始化render模块
     render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool)
     # 初始化MVController模块
