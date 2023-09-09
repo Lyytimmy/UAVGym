@@ -6,9 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import math
-from array_data import *
-from array_data_50 import *
-from array_data_100 import *
 from array_data_zhuanyi import *
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -21,110 +18,6 @@ from zhuanyi_test import *
 # 设置全局小数保留位数为2
 np.set_printoptions(precision=2)
 mplstyle.use('fast')
-
-
-def is_arrive(uav_pos, aim_pos, tolerance=0.1):
-    x_error = abs(uav_pos[0] - aim_pos[0])
-    y_error = abs(uav_pos[1] - aim_pos[1])
-    z_error = abs(uav_pos[2] - aim_pos[2])
-
-    return x_error < tolerance and y_error < tolerance and z_error < tolerance
-
-
-def is_arrive2D(uav_pos, aim_pos, tolerance=0.2):
-    x_error = abs(uav_pos[0] - aim_pos[0])
-    y_error = abs(uav_pos[1] - aim_pos[1])
-
-    return x_error < tolerance and y_error < tolerance
-
-
-def go_to(pointa, pointb, max_speed=0.3):
-    x_diff = pointb[0] - pointa[0]
-    y_diff = pointb[1] - pointa[1]
-
-    # Calculate the distance to the target point
-    distance = np.sqrt(x_diff ** 2 + y_diff ** 2)
-
-    # Check if x_diff or y_diff is less than 0.1 and set vx and vy accordingly
-    if abs(x_diff) < 0.1:
-        vx = 0
-    else:
-        vx_normalized = x_diff / distance
-        vx = vx_normalized * max_speed
-
-    if abs(y_diff) < 0.1:
-        vy = 0
-    else:
-        vy_normalized = y_diff / distance
-        vy = vy_normalized * max_speed
-
-    return vx, vy
-
-
-def is_collision(uav_positions, x, y, radius):
-    for pos in uav_positions:
-        if np.linalg.norm([pos[0] - x, pos[1] - y]) < 2 * radius:
-            return True
-    return False
-
-
-def _will_enter_building(state, action, buildings_location, uav_r):
-    next_x = state[0] + action[0]
-    next_y = state[1] + action[1]
-    next_z = state[2] + action[2]
-
-    # 创建无人机的碰撞体积几何对象（球形）
-    uav_collision_volume = Point(next_x, next_y, next_z).buffer(uav_r)
-
-    # 获取无人机下一步的网格的位置
-    grid_x = int(next_x)
-    grid_y = int(next_y)
-
-    """building_polygon = buildings_location[grid_x][grid_y]
-    if isinstance(building_polygon, Polygon):
-        if building_polygon.intersects(uav_collision_volume):
-            return True
-    """
-    return False
-
-
-def _is_in_building(state, buildings_location, uav_r):
-    x = state[0]
-    y = state[1]
-    z = state[2]
-
-    # 获取无人机当前的格子位置
-    grid_x = int(x)
-    grid_y = int(y)
-    building_height = buildings_location[grid_x][grid_y]
-    if z + uav_r <= building_height:
-        return True
-
-    return False
-
-
-def _is_outside_map(state, action, map_w, map_h, map_z):
-    next_x = state[0] + action[0]
-    next_y = state[1] + action[1]
-    next_z = state[2] + action[2]
-
-    if next_x < 0 or next_x >= map_w or next_y < 0 or next_y >= map_h or next_z < 0 or next_z >= map_z:
-        return True
-
-    return False
-
-
-def get_points_x(i):
-    return points[i][0]
-
-
-def get_points_y(i):
-    return points[i][1]
-
-
-def get_points(i):
-    return points[i]
-
 
 class UAVEnv(gym.Env):
     def __init__(self, uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r):
@@ -152,7 +45,6 @@ class UAVEnv(gym.Env):
         for i in range(32):
             x, y = match_pairs_zhuanyi[i][1][:2]
             self.state[i][:2] = x, y
-        print(self.state)
         #self.state = uav_init_state_zhuanyi
 
     def recorder(self, env_t):
@@ -163,14 +55,7 @@ class UAVEnv(gym.Env):
 
     def step(self, actions, env_t):
         actions = np.array(actions).reshape(self.uav_num, 4)
-
         for i in range(self.uav_num):
-            if _will_enter_building(self.state[i], actions[i], self.buildings_location, self.uav_r):
-                actions[i][:3] = 0  # set vx, vy, vz to zero
-
-            if _is_outside_map(self.state[i], actions[i], self.map_w, self.map_h, self.map_z):
-                actions[i][:3] = 0  # set vx, vy, vz to zero
-
             # update state x，y，z位置更新为原来的加上偏移量；vx，vy，vz更新，
             self.state[i][0] += actions[i][0]  # uav_x = vx*t, suppose t=1
             self.state[i][1] += actions[i][1]  # uav_y = vy*t
@@ -178,6 +63,11 @@ class UAVEnv(gym.Env):
             self.state[i][3:6] = actions[i][:3]  # update vx, vy, vz
             self.state[i][6] = actions[i][3]  # update sensor status
         """
+         if _will_enter_building(self.state[i], actions[i], self.buildings_location, self.uav_r):
+                actions[i][:3] = 0  # set vx, vy, vz to zero
+
+            if _is_outside_map(self.state[i], actions[i], self.map_w, self.map_h, self.map_z):
+                actions[i][:3] = 0  # set vx, vy, vz to zero
                     if _is_in_building(self.state[i], self.buildings_location, self.uav_r):
                 self.state[i][0] -= actions[i][0]  # uav_x = vx*t, suppose t=1
                 self.state[i][1] -= actions[i][1]  # uav_y = vy*t
@@ -295,38 +185,71 @@ class CreateMap:
 
         return self.buildings, self.buildings_location
 
-    class MoveController:
-        def Move_up(self):
-            return 0, 0, 0.2
+class MvController:
+    def __init__(self, map_w, map_h, map_z, buildings_location):
+        self.map_w = map_w
+        self.map_h = map_h
+        self.map_z = map_z
+        self.buildings_location =buildings_location
 
-        def Move_down(self):
-            return 0, 0, -0.2
+    def Move_up(self):
+        return 0, 0, 0.2
+    def Move_down(self):
+        return 0, 0, -0.2
+    def Move_to(self, uav, aim):
+        max_speed = 0.3
+        volatility = 0.05
+        x_diff = uav[0] - aim[0]
+        y_diff = uav[1] - aim[1]
+        z_diff = uav[2] - aim[2]
+        distance = np.sqrt(x_diff ** 2 + y_diff ** 2 + z_diff ** 2)
+        if abs(x_diff) < 0.1:
+            vx = 0
+        else:
+            vx_normalized = x_diff / distance
+            vx = vx_normalized * max_speed + random.gauss(0, volatility)
+        if abs(y_diff) < 0.1:
+            vy = 0
+        else:
+            vy_normalized = y_diff / distance
+            vy = vy_normalized * max_speed + random.gauss(0, volatility)
+        if abs(z_diff) < 0.1:
+            vz = 0
+        else:
+            vz_normalized = z_diff / distance
+            vz = vz_normalized * max_speed + random.gauss(0, volatility)
+        return vx, vy, vz
 
-        #def Move_to(self):
-    """
-    def go_to(pointa, pointb, max_speed=0.3):
-    x_diff = pointb[0] - pointa[0]
-    y_diff = pointb[1] - pointa[1]
+    def _Is_arrive(self, uav, aim):
+        tolerance = 0.1
+        x_error = abs(uav[0] - aim[0])
+        y_error = abs(uav[1] - aim[1])
+        z_error = abs(uav[2] - aim[2])
+        return x_error < tolerance and y_error < tolerance and z_error < tolerance
 
-    # Calculate the distance to the target point
-    distance = np.sqrt(x_diff ** 2 + y_diff ** 2)
+    #def Is_collision(self):检测无人机之间是否会发生碰撞
 
-    # Check if x_diff or y_diff is less than 0.1 and set vx and vy accordingly
-    if abs(x_diff) < 0.1:
-        vx = 0
-    else:
-        vx_normalized = x_diff / distance
-        vx = vx_normalized * max_speed
+    def _Will_enter_buildings(self, uav, action, uav_r):
+        next_x = uav[0] + action[0]
+        next_y = uav[1] + action[1]
+        next_z = uav[2] + action[2]
+        grid_x = int(next_x)
+        grid_y = int(next_y)
+        height = self.buildings_location[grid_x][grid_y]
+        if next_z - uav_r <= height:
+            return True
+        return False
 
-    if abs(y_diff) < 0.1:
-        vy = 0
-    else:
-        vy_normalized = y_diff / distance
-        vy = vy_normalized * max_speed
+    def _Is_outside_map(self, uav, action):
+        next_x = uav[0] + action[0]
+        next_y = uav[1] + action[1]
+        next_z = uav[2] + action[2]
+        if next_x < 0 or next_x >= self.map_w or next_y < 0 or next_y >= self.map_h or next_z < 0 or next_z >= self.map_z:
+            return True
 
-    return vx, vy
+        return False
 
-    """
+
 
 
 def get_whz(size=10):
@@ -354,24 +277,20 @@ def main():
     env = UAVEnv(uav_num, buildings, buildings_location, map_w, map_h, map_z, uav_r)
     # 初始化render模块
     render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool, map_size)
+    # 初始化MVController模块
+    mvcontroller = MvController()
 
-    actions = [[0, 0, 0, 0] for _ in range(32)]
-    while env_t < 25:
-        actions = [[0, 0, 0.2, 0] for _ in range(32)]
-        obs, reward, done, info = env.step(actions, env_t)
-        env.recorder(env_t)
-        render.render3D()
-        plt.pause(0.001)
-        env_t += 1
-    actions = [[0, 0, 0, 0] for _ in range(32)]
-    while env_t < 30:
-        for i in range(16, 32):
-            actions[i] = [0, 0, 0.2, 0]
-        obs, reward, done, info = env.step(actions, env_t)
-        env.recorder(env_t)
-        render.render3D()
-        plt.pause(0.001)
-        env_t += 1
+    actions = [[0, 0, 0, 0] for _ in range(uav_num)]
+    flag = [False] * uav_num
+    done = False
+    while not done:
+        for pair in match_pairs_zhuanyi:
+            index = pair[0]
+            uav_state = env.state[index][:3]
+            aim = pair[2]
+            vx, vy, vz = mvcontroller.Move_to(uav_state, aim)
+            if
+    """
     actions = [[0, 0, 0, 0] for _ in range(32)]
     done = False
     while not done:
@@ -395,6 +314,8 @@ def main():
         env_t += 1
         if done:
             env.reset()
+    """
+
 
     """
      actions = [[0, 0, 0, 0] for _ in range(34)]
