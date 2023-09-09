@@ -220,7 +220,7 @@ class MvController:
             vz = vz_normalized * max_speed + random.gauss(0, volatility)
         return vx, vy, vz
 
-    def _Is_arrive(self, uav, aim):
+    def Is_arrive(self, uav, aim):
         tolerance = 0.1
         x_error = abs(uav[0] - aim[0])
         y_error = abs(uav[1] - aim[1])
@@ -229,7 +229,7 @@ class MvController:
 
     #def Is_collision(self):检测无人机之间是否会发生碰撞
 
-    def _Will_enter_buildings(self, uav, action, uav_r):
+    def Will_enter_buildings(self, uav, action, uav_r):
         next_x = uav[0] + action[0]
         next_y = uav[1] + action[1]
         next_z = uav[2] + action[2]
@@ -240,7 +240,7 @@ class MvController:
             return True
         return False
 
-    def _Is_outside_map(self, uav, action):
+    def Is_outside_map(self, uav, action):
         next_x = uav[0] + action[0]
         next_y = uav[1] + action[1]
         next_z = uav[2] + action[2]
@@ -279,7 +279,7 @@ def main():
     render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool, map_size)
     # 初始化MVController模块
     mvcontroller = MvController()
-
+    # 开始
     actions = [[0, 0, 0, 0] for _ in range(uav_num)]
     flag = [False] * uav_num
     done = False
@@ -289,108 +289,23 @@ def main():
             uav_state = env.state[index][:3]
             aim = pair[2]
             vx, vy, vz = mvcontroller.Move_to(uav_state, aim)
-            if mvcontroller._Is_arrive(uav, aim):
-
-    """
-    actions = [[0, 0, 0, 0] for _ in range(32)]
-    done = False
-    while not done:
-        for match_pair in match_pairs_zhuanyi:
-            index = match_pair[0]
-            uav = match_pair[1]
-            aim = match_pair[2]
-            vx, vy = go_to(uav, aim)
-            actions[index] = [vx, vy, 0, 0]
-            if is_arrive2D(env.state[index][:2], aim):
-                actions[index] = [0, 0, -0.2, 0]
-                if env.state[index][2] < 0.2:
-                    actions[index] = [0, 0, 0, 0]
-                    print(f'{index} is ok')
-                    render.ax.scatter(env.state[index][0], env.state[index][1], env.state[index][2], color='red', s=50)
+            if mvcontroller.Is_arrive(uav_state, aim):
+                if not flag[index]:
+                    flag[index] = True
+                    render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
+            if mvcontroller.Is_outside_map(uav_state, [vx, vy, vz]):
+                vx, vy, vz = 0, 0, 0
+            if mvcontroller.Will_enter_buildings(uav_state, [vx, vy, vz], uav_r):
+                vx, vy, vz = mvcontroller.Move_up()
+            actions[index] = [vx, vy, vz, 0]
         obs, reward, done, info = env.step(actions, env_t)
-        # 循环画图
         env.recorder(env_t)
         render.render3D()
-        plt.pause(0.001)
+        plt.pause(0.01)
         env_t += 1
         if done:
             env.reset()
-    """
 
-
-    """
-     actions = [[0, 0, 0, 0] for _ in range(34)]
-    while env_t != 25:
-        actions = [[0, 0, 0.2, 0] for _ in range(34)]
-
-        obs, reward, done, info = env.step(actions, env_t)
-        # 循环画图
-        env.recorder(env_t)
-        render.render3D()
-        plt.pause(0.001)
-        env_t += 1
-
-    actions = [[0, 0, 0, 0] for _ in range(34)]
-    done = False
-    while not done:
-        for match_pair in match_pairs:
-            i_uav = match_pair[0]
-            i_aim = match_pair[1]
-            uav = (env.state[i_uav][0], env.state[i_uav][1])
-            aim = (get_points_x(i_aim), get_points_y(i_aim))
-            vx, vy = go_to(uav, aim)
-            actions[i_uav] = [vx, vy, 0, 0]
-            if is_arrive(env.state[i_uav][:3], get_points(i_aim)):
-                render.ax.scatter(env.state[i_uav][0], env.state[i_uav][1], env.state[i_uav][2], color='red', s=50)
-        obs, reward, done, info = env.step(actions, env_t)
-        # 循环画图
-        env.recorder(env_t)
-        render.render3D()
-        plt.pause(0.001)
-        env_t += 1
-        if done:
-            env.reset()
-    """
-    """
-    
-    """
-
-    # done = False
-    # while not done:
-    #    print("ok")
-    #    actions = [[0, 0, 0, 0] for _ in range(34)]
-    #    env.recorder(env_t)
-    #    render.render3D()
-    #    plt.pause(0.001)
-    #    env_t += 1
-    """
-                while env_t < 150:
-            for i in range(32):
-                actions[i] = [0, 0, -0.2, 0]
-                obs, reward, done, info = env.step(actions, env_t)
-                # 循环画图
-                env.recorder(env_t)
-                render.render3D()
-                plt.pause(0.001)
-                env_t += 1
-        for i in range(32):
-            render.ax.scatter(env.state[i][0], env.state[i][1], 0, color='red', s=50)
-        """
-
-    """
-    正常绘图
-    done = False
-    while not done:
-        actions = env.action_space.sample()  # sample an action
-        obs, reward, done, info = env.step(actions, env_t)
-        # 循环画图
-        env.recorder(env_t)
-        render.render3D()
-        plt.pause(0.001)
-        env_t += 1
-        if done:
-            env.reset()
-    """
 
 
 if __name__ == "__main__":
