@@ -2,13 +2,13 @@ import random
 
 
 def generate_array():
-    array = [[random.randint(0, 5) for _ in range(50)] for _ in range(50)]
+    array = [[random.randint(0, 7) for _ in range(50)] for _ in range(50)]
 
     for i in range(50):
-        if i in [8, 9, 10, 11, 12, 18, 19, 20, 22, 28, 29, 31, 38, 39, 40, 41, 42, 48, 49]:
+        if i in [0, 1, 10, 11, 20, 21, 30, 31, 40, 41,  48, 49]:
             array[i] = [0] * 50
         for j in range(50):
-            if j in [8, 9, 10, 11, 12, 18, 19, 21,  28, 29, 31, 32, 38, 39, 40, 41, 42, 48, 49]:
+            if j in [0, 1, 10, 11, 20, 21, 30, 31, 40, 41,  48, 49]:
                 array[i][j] = 0
 
     for row in array:
@@ -49,10 +49,11 @@ def modify_array(array, x1, x2, y1, y2, value):
 
 # 生成数组
 array = generate_array()
-array = modify_array(array,0,15,0,49,0)
-array = modify_array(array,35,49,0,49,0)
-array = modify_array(array,0,49,0,15,0)
-array = modify_array(array,0,49,35,49,0)
+
+#array = modify_array(array,0,15,0,49,0)
+#array = modify_array(array,35,49,0,49,0)
+#array = modify_array(array,0,49,0,15,0)
+#array = modify_array(array,0,49,35,49,0)
 def print_array3(array):
     array_building = []
     for i in range(50):
@@ -64,4 +65,4 @@ def print_array3(array):
 
 # 打印数组
 # print_array3(array)
-print_array3(array)
+print_array(array)

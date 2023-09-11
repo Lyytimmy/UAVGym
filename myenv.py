@@ -131,7 +131,7 @@ class Render:
         plt.ion()
         for i in range(self.uav_num):
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
-            l = self.ax.plot(x_traj[-10:], y_traj[-10:], z_traj[-10:], color='gray', alpha=0.7, linewidth=2.0)
+            l = self.ax.plot(x_traj[-15:], y_traj[-15:], z_traj[-15:], color='gray', alpha=0.7, linewidth=2.0)
             self.line.append(l)
         while len(self.line) > self.uav_num:
             old_line = self.line.pop(0)
@@ -186,9 +186,9 @@ class MvController:
     def Move_to(self, uav, aim):
         max_speed = 0.3
         volatility = 0.02
-        x_diff = uav[0] - aim[0]
-        y_diff = uav[1] - aim[1]
-        z_diff = uav[2] - aim[2]
+        x_diff = aim[0] - uav[0]
+        y_diff = aim[1] - uav[1]
+        z_diff = aim[2] - uav[2]
         distance = np.sqrt(x_diff ** 2 + y_diff ** 2 + z_diff ** 2)
         if abs(x_diff) < 0.1:
             vx = 0
