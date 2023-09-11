@@ -73,14 +73,16 @@ class Render:
         self.position_pool = position_pool
         self.line = []
         self.match_pairs = match_pairs
+        self.AimsPoint = [[] for _ in range(self.uav_num)]
 
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
         self.ax = self.fig.add_subplot(111, projection='3d')  # 创建三维坐标系
 
-        for pair in match_pairs:
+        for index, pair in enumerate(match_pairs):
             aim = pair[2]
-            self.ax.scatter(aim[0], aim[1], aim[2], color='deepskyblue', s=20)
+            Point = self.ax.scatter(aim[0], aim[1], aim[2], color='deepskyblue', s=20)
+            self.AimsPoint[index].append(Point)
         # 绘制建筑
         # draw building
         for building in self.buildings:
@@ -134,7 +136,7 @@ class Render:
         plt.ion()
         for i in range(self.uav_num):
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
-            l = self.ax.plot(x_traj[-15:], y_traj[-15:], z_traj[-15:], color='gray', alpha=0.7, linewidth=2.0)
+            l = self.ax.plot(x_traj[-10:], y_traj[-10:], z_traj[-10:], color='gray', alpha=0.7, linewidth=2.0)
             self.line.append(l)
         while len(self.line) > self.uav_num:
             old_line = self.line.pop(0)
@@ -265,6 +267,8 @@ def main():
             if mvcontroller.Is_arrive(uav_state, aim):
                 if not flag[index]:
                     flag[index] = True
+                    point = render.AimsPoint[index].pop(0)
+                    point.remove()
                     render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
             if mvcontroller.Is_outside_map(uav_state, [vx, vy, vz]):
                 vx, vy, vz = 0, 0, 0
