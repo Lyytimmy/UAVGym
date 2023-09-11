@@ -97,10 +97,10 @@ class Render:
 
             if building_type == 1:
                 height = 1
-                color = 'green'
+                color = 'lightgreen'
             elif building_type == 2:
                 height = 2
-                color = 'orange'
+                color = 'lightblue'
             elif building_type == 3:
                 height = 3
                 color = 'purple'
@@ -275,7 +275,7 @@ def main():
                     flag[index] = True
                     point = render.AimsPoint[index].pop(0)
                     point.remove()
-                    render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
+                    #render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
             if mvcontroller.Is_outside_map(uav_state, [vx, vy, vz]):
                 vx, vy, vz = 0, 0, 0
             if mvcontroller.Will_enter_buildings(uav_state, [vx, vy, vz], uav_r):
