@@ -26,52 +26,34 @@ def generate_uav_pos(x1, x2, y1, y2):
 
 
 def generate_uav_pos_array():
-    uav_pos = [[] for _ in range(34)]
+    uav_pos = [[] for _ in range(50)]
     uav_r = 0.3
     z = 0
     # Group 1: 8 UAVs with x in the range [0, 15] and y in the range [0, 15]
-    for i in range(8):
-        while True:
-            x, y = generate_uav_pos(35, 49, 0, 49)
-            if not is_collision(uav_pos[:i], x, y, uav_r):
-                break
-            if not Is_enter_buildings([x, y, 0], buildings_location_zhuanyi):
-                break
+    for i in range(12):
+
+        x, y = generate_uav_pos(0, 15, 0, 15)
         uav_pos[i].append(x)
         uav_pos[i].append(y)
         uav_pos[i].append(z)
 
     # Group 2: 9 UAVs with x in the range [35, 49] and y in the range [0, 15]
-    for i in range(8, 17):
-        while True:
-            x, y = generate_uav_pos(0, 48, 0, 15)
-            if not is_collision(uav_pos[:i], x, y, uav_r):
-                break
-            if not Is_enter_buildings([x, y, 0], buildings_location_zhuanyi):
-                break
+    for i in range(13, 25):
+        x, y = generate_uav_pos(35, 48, 0, 15)
         uav_pos[i].append(x)
         uav_pos[i].append(y)
         uav_pos[i].append(z)
 
     # Group 3: 8 UAVs with x in the range [0, 15] and y in the range [35, 49]
-    for i in range(17, 25):
-        while True:
-            x, y = generate_uav_pos(0, 35, 0, 49)
-            if not is_collision(uav_pos[:i], x, y, uav_r):
-                break
-            if not Is_enter_buildings([x, y, 0], buildings_location_zhuanyi):
-                break
+    for i in range(26, 38):
+        x, y = generate_uav_pos(0, 15, 35, 49)
         uav_pos[i].append(x)
         uav_pos[i].append(y)
         uav_pos[i].append(z)
     # Group 4: 9 UAVs with x in the range [35, 49] and y in the range [35, 49]
-    for i in range(25, 34):
-        while True:
-            x, y = generate_uav_pos(0, 49, 35, 49)
-            if not is_collision(uav_pos[:i], x, y, uav_r):
-                break
-            if not Is_enter_buildings([x, y, 0], buildings_location_zhuanyi):
-                break
+    for i in range(38, 50):
+
+        x, y = generate_uav_pos(35, 49, 35, 49)
         uav_pos[i].append(x)
         uav_pos[i].append(y)
         uav_pos[i].append(z)
@@ -80,3 +62,4 @@ def generate_uav_pos_array():
 
 array = generate_uav_pos_array()
 print(array)
+print(len(array))

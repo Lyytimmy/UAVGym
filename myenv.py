@@ -62,7 +62,7 @@ class UAVEnv(gym.Env):
 
 
 class Render:
-    def __init__(self, uav_num, state, buildings, map_w, map_h, map_z, uav_r, position_pool):
+    def __init__(self, uav_num, state, buildings, map_w, map_h, map_z, uav_r, position_pool, match_pairs):
         self.uav_num = uav_num
         self.state = state
         self.buildings = buildings
@@ -72,14 +72,17 @@ class Render:
         self.uav_r = uav_r
         self.position_pool = position_pool
         self.line = []
+        self.match_pairs = match_pairs
 
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
         self.ax = self.fig.add_subplot(111, projection='3d')  # 创建三维坐标系
 
+        for pair in match_pairs:
+            aim = pair[2]
+            self.ax.scatter(aim[0], aim[1], aim[2], color='deepskyblue', s=20)
         # 绘制建筑
         # draw building
-
         for building in self.buildings:
             x = [building[0][0], building[1][0], building[3][0], building[2][0]]
             y = [building[0][1], building[1][1], building[3][1], building[2][1]]
@@ -154,8 +157,8 @@ class SetConfig:
             self.map_w, self.map_h, self.map_z = 50, 50, 5
             self.buildings_location = buildings_location_WH
             self.buildings = buildings_WH
-            self.match_pairs = match_pairs
-            self.Init_state = uav_init_state
+            self.match_pairs = match_pairs_WH
+            self.Init_state = uav_init_pos_WH
         elif self.name == 'Map2':
             self.uav_num = 32
             self.map_w, self.map_h, self.map_z = 50, 50, 5
@@ -238,7 +241,7 @@ class MvController:
 
 
 def main():
-    Map_name = 'Map2'
+    Map_name = 'Map1'
     env_t = 0
     # 初始化MAP模块
     MAP = SetConfig(Map_name)
@@ -246,7 +249,7 @@ def main():
     # 初始化Env模块
     env = UAVEnv(uav_num,  map_w, map_h, map_z, Init_state)
     # 初始化render模块
-    render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool)
+    render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool, match_pairs)
     # 初始化MVController模块
     mvcontroller = MvController(map_w, map_h, map_z, buildings_location)
     # 开始
