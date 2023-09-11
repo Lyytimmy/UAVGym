@@ -74,6 +74,7 @@ class Render:
         self.line = []
         self.match_pairs = match_pairs
         self.AimsPoint = [[] for _ in range(self.uav_num)]
+        self.Head = []
 
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
@@ -138,10 +139,15 @@ class Render:
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
             l = self.ax.plot(x_traj[-10:], y_traj[-10:], z_traj[-10:], color='gray', alpha=0.7, linewidth=2.0)
             self.line.append(l)
+            head = self.ax.scatter(x_traj[-1], y_traj[-1], z_traj[-1], color='darkorange', s=50)
+            self.Head.append(head)
+
         while len(self.line) > self.uav_num:
             old_line = self.line.pop(0)
             old_line[0].remove()
-
+        while len(self.Head) > self.uav_num:
+            old_head = self.Head.pop(0)
+            old_head.remove()
 class SetConfig:
     def __init__(self, name):
         self.name = name
