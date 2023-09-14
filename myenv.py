@@ -126,7 +126,7 @@ class Render:
             ]
 
             cuboid = Poly3DCollection([[vertices[point] for point in face] for face in faces], facecolors=color,
-                                      linewidths=1, edgecolors='black', alpha=1)
+                                      linewidths=0.5, edgecolors='gray', alpha=1)
             self.ax.add_collection3d(cuboid)
 
         self.ax.set_xlim(0, map_w + 1)
@@ -139,7 +139,7 @@ class Render:
             x_traj, y_traj, z_traj, _ = zip(*self.position_pool[i])
             l = self.ax.plot(x_traj[-10:], y_traj[-10:], z_traj[-10:], color='gray', alpha=0.7, linewidth=2.0)
             self.line.append(l)
-            head = self.ax.scatter(x_traj[-1], y_traj[-1], z_traj[-1], color='darkorange', s=50)
+            head = self.ax.scatter(x_traj[-1], y_traj[-1], z_traj[-1], color='darkorange', s=30)
             self.Head.append(head)
 
         while len(self.line) > self.uav_num:
