@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import math
 from array_data_zhuanyi import *
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 from array_data_WH import *
 from WH_test import *
 from matplotlib.image import imread
