@@ -14,13 +14,12 @@ from matplotlib.image import imread
 import matplotlib.style as mplstyle
 from zhuanyi_test import *
 
-# 设置全局小数保留位数为2
-np.set_printoptions(precision=2)
 mplstyle.use('fast')
 
 
+# 初始化无人机环境
 class UAVEnv(gym.Env):
-    def __init__(self, uav_num,  map_w, map_h, map_z, Init_state):
+    def __init__(self, uav_num, map_w, map_h, map_z, Init_state):
         super(UAVEnv, self).__init__()
         self.uav_num = uav_num
         self.map_w = map_w
@@ -28,14 +27,14 @@ class UAVEnv(gym.Env):
         self.map_z = map_z
         self.position_pool = [[] for _ in range(self.uav_num)]
         self.state = Init_state
-
-        # Define action and observation space  动作空间是所有动作状态的最大最小值之间、观察空间是所有状态的最大最小值之间
+        # 定义无人机的动作空间和观测空间
         self.action_space = spaces.Box(low=np.array([-0.35, -0.35, -0.35, 0] * self.uav_num),
                                        high=np.array([0.35, 0.35, 0.35, 1] * self.uav_num), dtype=np.float32)
         self.observation_space = spaces.Box(low=np.array([0, 0, 0, -1, -1, -1, 0] * self.uav_num),
                                             high=np.array([self.map_w, self.map_h, self.map_z, 1, 1, 1, 1] *
                                                           self.uav_num), dtype=np.float32)
 
+    # 记录无人机的飞行轨迹函数
     def recorder(self, env_t):
         if env_t % 2 == 0:
             for i in range(self.uav_num):
@@ -43,6 +42,7 @@ class UAVEnv(gym.Env):
                 position = [x, y, z, env_t]
                 self.position_pool[i].append(position)
 
+    # 无人机的动作更新函数
     def step(self, actions, env_t):
         actions = np.array(actions).reshape(self.uav_num, 4)
         for i in range(self.uav_num):
@@ -59,6 +59,7 @@ class UAVEnv(gym.Env):
         return self.state
 
 
+# 画面渲染函数，使用matplotlib库绘制地图、障碍物、无人机
 class Render:
     def __init__(self, uav_num, state, buildings, map_w, map_h, map_z, uav_r, position_pool, match_pairs):
         self.uav_num = uav_num
@@ -77,13 +78,12 @@ class Render:
         # 创建画布
         self.fig = plt.figure(figsize=(self.map_w, self.map_h))  # 设置画布大小
         self.ax = self.fig.add_subplot(111, projection='3d')  # 创建三维坐标系
-
+        # 绘制目标点
         for index, pair in enumerate(match_pairs):
             aim = pair[2]
             Point = self.ax.scatter(aim[0], aim[1], aim[2], color='deepskyblue', s=20)
             self.AimsPoint[index].append(Point)
         # 绘制建筑
-        # draw building
         for building in self.buildings:
             x = [building[0][0], building[1][0], building[3][0], building[2][0]]
             y = [building[0][1], building[1][1], building[3][1], building[2][1]]
@@ -103,7 +103,6 @@ class Render:
                 height = 3
                 color = 'purple'
 
-            # Draw solid cuboid
             vertices = [
                 [x[0], y[0], z[0]],
                 [x[1], y[1], z[1]],
@@ -131,6 +130,7 @@ class Render:
         self.ax.set_ylim(0, map_h + 1)
         self.ax.set_zlim(0, map_z + 1)
 
+    # 绘制无人机
     def render3D(self):
         plt.ion()
         for i in range(self.uav_num):
@@ -139,13 +139,16 @@ class Render:
             self.line.append(l)
             head = self.ax.scatter(x_traj[-1], y_traj[-1], z_traj[-1], color='darkorange', s=30)
             self.Head.append(head)
-
+        # 更新轨迹和无人机本体位置
         while len(self.line) > self.uav_num:
             old_line = self.line.pop(0)
             old_line[0].remove()
         while len(self.Head) > self.uav_num:
             old_head = self.Head.pop(0)
             old_head.remove()
+
+
+# 参数配置，目前可供选择的演示地图有Map1、Map2
 class SetConfig:
     def __init__(self, name):
         self.name = name
@@ -179,6 +182,7 @@ class SetConfig:
         return self.uav_num, self.map_w, self.map_h, self.map_z, self.buildings_location, self.buildings, self.match_pairs, self.uav_r, self.Init_state
 
 
+# 无人机的动作控制器
 class MvController:
     def __init__(self, map_w, map_h, map_z, buildings_location):
         self.map_w = map_w
@@ -253,7 +257,7 @@ def main():
     MAP = SetConfig(Map_name)
     uav_num, map_w, map_h, map_z, buildings_location, buildings, match_pairs, uav_r, Init_state = MAP.Setting()
     # 初始化Env模块
-    env = UAVEnv(uav_num,  map_w, map_h, map_z, Init_state)
+    env = UAVEnv(uav_num, map_w, map_h, map_z, Init_state)
     # 初始化render模块
     render = Render(uav_num, env.state, buildings, map_w, map_h, map_z, uav_r, env.position_pool, match_pairs)
     # 初始化MVController模块
@@ -273,7 +277,7 @@ def main():
                     flag[index] = True
                     point = render.AimsPoint[index].pop(0)
                     point.remove()
-                    #render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
+                    # render.ax.scatter(uav_state[0], uav_state[1], uav_state[2], color='red', s=50)
             if mvcontroller.Is_outside_map(uav_state, [vx, vy, vz]):
                 vx, vy, vz = 0, 0, 0
             if mvcontroller.Will_enter_buildings(uav_state, [vx, vy, vz], uav_r):
