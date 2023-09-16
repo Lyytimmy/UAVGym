@@ -5,6 +5,14 @@ UAVGym是一个用python编写的GYM风格的无人机仿真环境，用于强�
 - 可以仿真控制不同数量的无人机
 - 支持绘制无人机的三维飞行轨迹
 - 集成OPenAI Gym接口，可与强化学习算法配合使用
+## 演示
+- Map1演示动画
+
+![](Map1.gif)
+
+- Map2演示动画
+
+![](Map2.gif)
 ## 依赖
 - python3.6+
 - OpenAl Gym
